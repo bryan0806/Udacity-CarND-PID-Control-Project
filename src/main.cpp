@@ -18,6 +18,9 @@ double int_cte = 0.0;
 double prev_cte;
 int reset_times = 0;
 double total_err = 0.0;
+double best_err;
+double p[3];
+double dp[] = {1.0,0.001,1};
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -42,7 +45,9 @@ int main()
   PID pid;
   // TODO: Initialize the pid variable.
   pid.Init(1.0,0.0000,3);
-
+    p[0] = pid.Kp;
+    p[1] = pid.Ki;
+    p[2] = pid.Kd;
 
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -84,28 +89,47 @@ int main()
           num += 1;
           prev_cte = cte;
 
-          if(num%200==0){
+          if(num%500==0){
               reset_times += 1;
               pid.UpdateError(cte);
 
-              std::cout << "------------------" << int_cte << std::endl;
+              std::cout << "------------------"  << std::endl;
               std::cout << " Total error:" << total_err << std::endl;
-              std::cout << "------------------" << int_cte << std::endl;
-              // reset simulator
-              std::string msg = "42[\"reset\",{}]";
-              ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-              int_cte = 0;
-              total_err = 0;
-              // reset end
+              std::cout << "------------------"  << std::endl;
+              if(num == 500){
+                  best_err = total_err;
+              }
+              
+              while (total_err > 30) {
+                  if(total_err < best_err){
+                      best_err = total_err;
+                      pid.Kp *= 1.1;
+                  }else{
+                      
+                  }
+                  // reset simulator
+                  std::string msg = "42[\"reset\",{}]";
+                  ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+                  int_cte = 0;
+                  total_err = 0;
+                  // reset end
+                  }
+                  std::cout << "Yes, it would be here!@"  << std::endl;
+              
+              }
+              
+              std::cout << "best Kp:" << pid.Kp << " Ki:" <<  pid.Ki << " Kd:" << pid.Kd << std::endl;
 
-          }
+              
+
+          
 
           // DEBUG
           std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
           std::cout << "Kp:" << pid.Kp << " Kd:" << pid.Kd << " Ki:" << pid.Ki << std::endl;
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
+          msgJson["throttle"] = 0.1;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
