@@ -18,7 +18,7 @@ void PID::Init(double Kp_, double Ki_, double Kd_) {
 }
 
 void PID::UpdateError(double cte) {
-    double error = cte*cte;
+    double error = cte;
     cout << "error:" << error << endl;
 }
 
