@@ -18,9 +18,14 @@ double int_cte = 0.0;
 double prev_cte;
 int reset_times = 0;
 double total_err = 0.0;
+// For twiddle
 double best_err;
 double p[3];
-double dp[] = {1.0,0.001,1};
+double dp[] = {1.0,0.001,1.0};
+int twiddle_index = 0;
+int twiddle_condition = 20;
+int twiddle_ini = 0;
+int twiddle_ini2 = 0;
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -38,13 +43,23 @@ std::string hasData(std::string s) {
   return "";
 }
 
+
+void reset_sim(uWS::WebSocket<uWS::SERVER> ws){
+    // reset simulator
+    std::string msg = "42[\"reset\",{}]";
+    ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+    int_cte = 0;
+    total_err = 0;
+    // reset end
+}
+
 int main()
 {
   uWS::Hub h;
 
   PID pid;
   // TODO: Initialize the pid variable.
-  pid.Init(1.0,0.0000,3);
+  pid.Init(1.0,0.1,3);
     p[0] = pid.Kp;
     p[1] = pid.Ki;
     p[2] = pid.Kd;
@@ -78,8 +93,8 @@ int main()
           int_cte += cte;
 
           total_err = total_err+ std::abs(cte);
-          std::cout << "int CTE: " << int_cte << " total error: " << total_err << std::endl;
-
+          //std::cout << "int CTE: " << int_cte << " total error: " << total_err << std::endl;
+          std::cout << "Ki: " << pid.Ki << std::endl;
           steer_value = -pid.Kp * cte - pid.Kd * diff_cte - pid.Ki * int_cte;
           if(steer_value>1.0){
               steer_value = 1.0;
@@ -89,50 +104,137 @@ int main()
           num += 1;
           prev_cte = cte;
 
-          if(num%500==0){
+          if(num%200==0){
               reset_times += 1;
               pid.UpdateError(cte);
 
               std::cout << "------------------"  << std::endl;
               std::cout << " Total error:" << total_err << std::endl;
               std::cout << "------------------"  << std::endl;
-              if(num == 500){
+              if(num == 200){
                   best_err = total_err;
               }
               
-              while (total_err > 30) {
+
+
+          if(total_err > twiddle_condition){
+              std::cout << " start twiddle ......" << std::endl;
+              std::cout << "twiddle ini:" << twiddle_ini << std::endl;
+              if(twiddle_ini == 0){
+                  switch (twiddle_index) {
+                  case 0:
+                      pid.Kp += dp[0];
+                      break;
+                  case 1:
+                      pid.Ki += dp[1];
+                      break;
+                  case 2:
+                      pid.Kd += dp[2];
+                  default:
+                      break;
+                  }
+
+                   std::cout << "twiddle index:" << twiddle_index << " Kp:" << pid.Kp << " Kd:" << pid.Kd << " Ki:" << pid.Ki << std::endl;
+                  twiddle_ini = 1;
+                  reset_sim(ws);
+                  goto end_cycle;
+              }
+
+              if(total_err < best_err){
+                  best_err = total_err;
+                  dp[twiddle_index] *= 1.1;
+                  std::cout << "dp[" << twiddle_index << "] go up 1.1 times!!" << std::endl;
+                  // reset control flags
+                  twiddle_ini = 0;
+                  twiddle_ini2 = 0;
+                  twiddle_index = (twiddle_index+1)%3;
+                  reset_sim(ws);
+              }else{
+                  if(twiddle_ini2 == 0){
+                      switch (twiddle_index) {
+                      case 0:
+                          pid.Kp -= 2.0*dp[0];
+                          break;
+                      case 1:
+                          pid.Ki -= 2.0*dp[1];
+                          break;
+                      case 2:
+                          pid.Kd -= 2.0*dp[2];
+                      default:
+                          break;
+                      }
+                      std::cout << "second round // twiddle index:" << twiddle_index << "Kp:" << pid.Kp << " Kd:" << pid.Kd << " Ki:" << pid.Ki << std::endl;
+                      twiddle_ini2 = 1;
+                      reset_sim(ws);
+                      goto end_cycle;
+                  }
+
                   if(total_err < best_err){
                       best_err = total_err;
-                      pid.Kp *= 1.1;
+                      dp[twiddle_index] *= 1.1;
+                       std::cout << "second   dp[" << twiddle_index << "] go up 1.1 times!!" << std::endl;
+                      // reset control flags
+                      twiddle_ini = 0;
+                      twiddle_ini2 = 0;
+                      twiddle_index = (twiddle_index+1)%3;
+                      reset_sim(ws);
                   }else{
-                      
+                      switch (twiddle_index) {
+                      case 0:
+                          pid.Kp += dp[0];
+                          break;
+                      case 1:
+                          pid.Ki += dp[1];
+                          break;
+                      case 2:
+                          pid.Kd = dp[2];
+                      default:
+                          break;
+                      }
+
+
+                       std::cout << "third twiddle index:" << twiddle_index << "Kp:" << pid.Kp << " Kd:" << pid.Kd << " Ki:" << pid.Ki << std::endl;
+                      dp[twiddle_index] *= 0.9;
+                      // reset control flags
+                      twiddle_ini = 0;
+                      twiddle_ini2 = 0;
+                      twiddle_index = (twiddle_index+1)%3;
+                      reset_sim(ws);
+                      goto end_cycle;
+
                   }
-                  // reset simulator
-                  std::string msg = "42[\"reset\",{}]";
-                  ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-                  int_cte = 0;
-                  total_err = 0;
-                  // reset end
-                  }
-                  std::cout << "Yes, it would be here!@"  << std::endl;
+
+              }
+
+          }else{
+              std::cout << "!!!!!! total error is smaller than condition " << twiddle_condition << " !!!!!!!!" << std::endl;
+              twiddle_condition += 30;
+          }
+
+
+
+
+
               
               }
               
-              std::cout << "best Kp:" << pid.Kp << " Ki:" <<  pid.Ki << " Kd:" << pid.Kd << std::endl;
+
 
               
 
-          
+
 
           // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+          std::cout << "in the end twiddle ini:" << twiddle_ini << std::endl;
+          //std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
           std::cout << "Kp:" << pid.Kp << " Kd:" << pid.Kd << " Ki:" << pid.Ki << std::endl;
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.1;
+          msgJson["throttle"] = 0.2;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+
         }
       } else {
         // Manual driving
@@ -140,6 +242,8 @@ int main()
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
       }
     }
+        end_cycle:
+        ;
   });
 
   // We don't need this since we're not using HTTP but if it's removed the program
