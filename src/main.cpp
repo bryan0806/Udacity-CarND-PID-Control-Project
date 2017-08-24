@@ -65,7 +65,7 @@ int main()
 
   PID pid;
   // TODO: Initialize the pid variable.
-  pid.Init(1.0,0.1,3);
+  pid.Init(3.0,0.1,3.0);
     p[0] = pid.Kp;
     p[1] = pid.Ki;
     p[2] = pid.Kd;
@@ -110,7 +110,7 @@ int main()
           num += 1;
           prev_cte = cte;
 
-          if((num%500==0) || (std::fabs(cte) >= 2.4)){
+          if((num%2000==0) || (std::fabs(cte) >= 2.4)){
               reset_times += 1;
               pid.UpdateError(cte);
               avg_err = cte_2_sum/num;
@@ -189,7 +189,7 @@ int main()
                       best_err = avg_err;
                       dp[twiddle_index] *= 1.1;
                       std::cout << "Second *** dp[" << twiddle_index << "] go up 1.1 times!! now is " << dp[twiddle_index] << std::endl;
-                       std::cout << "second   dp[" << twiddle_index << "] go up 1.1 times!!" << std::endl;
+
                       // reset control flags
                       twiddle_flag1 = 0;
                       twddle_flag2 = 0;
@@ -226,6 +226,7 @@ int main()
 
           }else{
               std::cout << "!!!!!! avg error is smaller than condition " << twiddle_condition << " !!!!!!!!" << std::endl;
+              std::cout << "!!!!!! No need to twiddle any more  !!!!!!!!" << std::endl;
           }
 
 
