@@ -87,7 +87,7 @@ int main()
           double speed = std::stod(j[1]["speed"].get<std::string>());
           double angle = std::stod(j[1]["steering_angle"].get<std::string>());
           double steer_value;
-          double dp_sum = pid.Kp+pid.Ki+pid.Kd;
+          double dp_sum = dp[0]+dp[1]+dp[2];
           /*
           * TODO: Calcuate steering value here, remember the steering value is
           * [-1, 1].
@@ -129,6 +129,7 @@ int main()
               std::cout << " Avg error:" << avg_err << std::endl;
               std::cout << "------------------"  << std::endl;
               std::cout << " reset times:" << reset_times << std::endl;
+              std::cout << " dp_sum:" << dp_sum << std::endl;
 
               if(first_flag == 0){
                   best_err = avg_err;
