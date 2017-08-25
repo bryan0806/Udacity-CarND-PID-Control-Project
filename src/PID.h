@@ -10,6 +10,9 @@ public:
   double i_error;
   double d_error;
 
+  //Init parameter
+  bool is_init;
+
   /*
   * Coefficients
   */ 

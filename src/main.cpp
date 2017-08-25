@@ -29,6 +29,8 @@ int twiddle_flag1 = 0;
 int twddle_flag2 = 0;
 int first_flag = 0;
 int twiddle_enable = 1;
+int total_num = 0;
+int pre_num = 0;
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -91,42 +93,35 @@ int main()
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
-          if(num==0){
-             prev_cte = cte;
-          }
-          double diff_cte = cte - prev_cte;
-          int_cte += cte;
+
           cte_2_sum += cte*cte;
-          total_err = total_err+ std::abs(cte);
+          pid_angle.UpdateError(cte);
           //std::cout << "int CTE: " << int_cte << " total error: " << total_err << std::endl;
           //std::cout << "Ki: " << pid_angle.Ki << std::endl;
-          steer_value = -pid_angle.Kp * cte - pid_angle.Kd * diff_cte - pid_angle.Ki * int_cte;
+          steer_value = -pid_angle.TotalError();
+
           if(steer_value>1.0){
               steer_value = 1.0;
           }else if(steer_value < -1.0){
               steer_value = -1.0;
           }
           num += 1;
-          prev_cte = cte;
+          total_num += 1;
 
 
 
-
-          if((num%2000==0) || (std::fabs(cte) >= 2.4)){
+          if((num%2000==0) || ((std::fabs(cte) >= 2.4)&&((total_num-pre_num) > 100 ))){
               reset_times += 1;
-              pid_angle.UpdateError(cte);
+              pre_num = total_num;
               avg_err = cte_2_sum/num;
-
               std::cout << "twiddle index:" << twiddle_index << std::endl;
-              std::cout << "------------------"  << std::endl;
-              std::cout << " Total error:" << total_err << std::endl;
-              std::cout << "------------------"  << std::endl;
+
 
               std::cout << "------------------"  << std::endl;
               std::cout << " Avg error:" << avg_err << std::endl;
               std::cout << "------------------"  << std::endl;
               std::cout << " reset times:" << reset_times << std::endl;
-              std::cout << " dp_sum:" << dp_sum << std::endl;
+              std::cout << " dp_angle_sum:" << dp_sum << std::endl;
 
               if(first_flag == 0){
                   best_err = avg_err;
