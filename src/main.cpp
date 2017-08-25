@@ -22,7 +22,6 @@ double cte_2_sum=0;
 double avg_err = 0;
 // For twiddle
 double best_err;
-double p[3];
 double dp[] = {1.0,0.001,1.0};
 int twiddle_index = 0;
 double twiddle_condition = 0.04;
@@ -64,14 +63,12 @@ int main()
 {
   uWS::Hub h;
 
-  PID pid;
-  // TODO: Initialize the pid variable.
-  pid.Init(3.0,0.1,3.0);
-    p[0] = pid.Kp;
-    p[1] = pid.Ki;
-    p[2] = pid.Kd;
+  PID pid_angle;
+  // TODO: Initialize the pid_angle variable.
+  pid_angle.Init(3.0,0.1,3.0);
 
-  h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+
+  h.onMessage([&pid_angle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -102,8 +99,8 @@ int main()
           cte_2_sum += cte*cte;
           total_err = total_err+ std::abs(cte);
           //std::cout << "int CTE: " << int_cte << " total error: " << total_err << std::endl;
-          //std::cout << "Ki: " << pid.Ki << std::endl;
-          steer_value = -pid.Kp * cte - pid.Kd * diff_cte - pid.Ki * int_cte;
+          //std::cout << "Ki: " << pid_angle.Ki << std::endl;
+          steer_value = -pid_angle.Kp * cte - pid_angle.Kd * diff_cte - pid_angle.Ki * int_cte;
           if(steer_value>1.0){
               steer_value = 1.0;
           }else if(steer_value < -1.0){
@@ -117,7 +114,7 @@ int main()
 
           if((num%2000==0) || (std::fabs(cte) >= 2.4)){
               reset_times += 1;
-              pid.UpdateError(cte);
+              pid_angle.UpdateError(cte);
               avg_err = cte_2_sum/num;
 
               std::cout << "twiddle index:" << twiddle_index << std::endl;
@@ -139,24 +136,24 @@ int main()
 
           std::cout << " best error:" << best_err << std::endl;
           std::cout << " twiddle condiftion:" << twiddle_condition << std::endl;
-          if(avg_err > twiddle_condition && twiddle_enable ==1 && dp_sum > 0.2){
+          if(avg_err > twiddle_condition && twiddle_enable ==1 && dp_sum > 0.08){
               std::cout << " start twiddle ......" << std::endl;
 
               if(twiddle_flag1 == 0){
                   switch (twiddle_index) {
                   case 0:
-                      pid.Kp += dp[0];
+                      pid_angle.Kp += dp[0];
                       break;
                   case 1:
-                      pid.Ki += dp[1];
+                      pid_angle.Ki += dp[1];
                       break;
                   case 2:
-                      pid.Kd += dp[2];
+                      pid_angle.Kd += dp[2];
                   default:
                       break;
                   }
 
-                   std::cout << "twiddle index:" << twiddle_index << " Kp:" << pid.Kp << " Kd:" << pid.Kd << " Ki:" << pid.Ki << std::endl;
+                   std::cout << "twiddle index:" << twiddle_index << " Kp:" << pid_angle.Kp << " Kd:" << pid_angle.Kd << " Ki:" << pid_angle.Ki << std::endl;
                   twiddle_flag1 = 1;
                   reset_sim(ws);
                   goto end_cycle;
@@ -175,17 +172,17 @@ int main()
                   if(twddle_flag2 == 0){
                       switch (twiddle_index) {
                       case 0:
-                          pid.Kp -= 2.0*dp[0];
+                          pid_angle.Kp -= 2.0*dp[0];
                           break;
                       case 1:
-                          pid.Ki -= 2.0*dp[1];
+                          pid_angle.Ki -= 2.0*dp[1];
                           break;
                       case 2:
-                          pid.Kd -= 2.0*dp[2];
+                          pid_angle.Kd -= 2.0*dp[2];
                       default:
                           break;
                       }
-                      std::cout << "second round // twiddle index:" << twiddle_index << "Kp:" << pid.Kp << " Kd:" << pid.Kd << " Ki:" << pid.Ki << std::endl;
+                      std::cout << "second round // twiddle index:" << twiddle_index << "Kp:" << pid_angle.Kp << " Kd:" << pid_angle.Kd << " Ki:" << pid_angle.Ki << std::endl;
                       twddle_flag2 = 1;
                       reset_sim(ws);
                       goto end_cycle;
@@ -204,19 +201,19 @@ int main()
                   }else{
                       switch (twiddle_index) {
                       case 0:
-                          pid.Kp += dp[0];
+                          pid_angle.Kp += dp[0];
                           break;
                       case 1:
-                          pid.Ki += dp[1];
+                          pid_angle.Ki += dp[1];
                           break;
                       case 2:
-                          pid.Kd += dp[2];
+                          pid_angle.Kd += dp[2];
                       default:
                           break;
                       }
 
 
-                       std::cout << "third twiddle index:" << twiddle_index << "Kp:" << pid.Kp << " Kd:" << pid.Kd << " Ki:" << pid.Ki << std::endl;
+                       std::cout << "third twiddle index:" << twiddle_index << "Kp:" << pid_angle.Kp << " Kd:" << pid_angle.Kd << " Ki:" << pid_angle.Ki << std::endl;
                       dp[twiddle_index] *= 0.9;
                       std::cout << "bottom *** dp[" << twiddle_index << "] go down 0.9 times!! now is " << dp[twiddle_index] << std::endl;
                       // reset control flags
@@ -252,7 +249,7 @@ int main()
           // DEBUG
          // std::cout << "in the end twiddle flag1:" << twiddle_flag1 << std::endl;
           //std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
-          //std::cout << "Kp:" << pid.Kp << " Kd:" << pid.Kd << " Ki:" << pid.Ki << std::endl;
+          //std::cout << "Kp:" << pid_angle.Kp << " Kd:" << pid_angle.Kd << " Ki:" << pid_angle.Ki << std::endl;
           json msgJson;
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = 0.2;
