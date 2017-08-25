@@ -165,6 +165,7 @@ int main()
                   twddle_flag2 = 0;
                   twiddle_index = (twiddle_index+1)%3;
                   reset_sim(ws);
+                  goto next_dp;
               }else{
                   if(twddle_flag2 == 0){
                       switch (twiddle_index) {
@@ -195,6 +196,7 @@ int main()
                       twddle_flag2 = 0;
                       twiddle_index = (twiddle_index+1)%3;
                       reset_sim(ws);
+                      goto next_dp;
                   }else{
                       switch (twiddle_index) {
                       case 0:
