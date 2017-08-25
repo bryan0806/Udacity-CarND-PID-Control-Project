@@ -132,6 +132,8 @@ int main()
           std::cout << " best error:" << best_err << std::endl;
           std::cout << " twiddle condiftion:" << twiddle_condition << std::endl;
           if(avg_err > twiddle_condition && twiddle_enable ==1 && dp_sum > 0.08){
+            next_dp:
+            ;
               std::cout << " start twiddle ......" << std::endl;
 
               if(twiddle_flag1 == 0){
@@ -216,7 +218,7 @@ int main()
                       twddle_flag2 = 0;
                       twiddle_index = (twiddle_index+1)%3;
                       reset_sim(ws);
-                      goto end_cycle;
+                      goto next_dp;
 
                   }
 
