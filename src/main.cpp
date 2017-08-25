@@ -25,10 +25,11 @@ double best_err;
 double p[3];
 double dp[] = {1.0,0.001,1.0};
 int twiddle_index = 0;
-double twiddle_condition = 0.02;
+double twiddle_condition = 0.04;
 int twiddle_flag1 = 0;
 int twddle_flag2 = 0;
 int first_flag = 0;
+int twiddle_enable = 1;
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -86,6 +87,7 @@ int main()
           double speed = std::stod(j[1]["speed"].get<std::string>());
           double angle = std::stod(j[1]["steering_angle"].get<std::string>());
           double steer_value;
+          double dp_sum = pid.Kp+pid.Ki+pid.Kd;
           /*
           * TODO: Calcuate steering value here, remember the steering value is
           * [-1, 1].
@@ -110,6 +112,9 @@ int main()
           num += 1;
           prev_cte = cte;
 
+
+
+
           if((num%2000==0) || (std::fabs(cte) >= 2.4)){
               reset_times += 1;
               pid.UpdateError(cte);
@@ -133,7 +138,7 @@ int main()
 
           std::cout << " best error:" << best_err << std::endl;
           std::cout << " twiddle condiftion:" << twiddle_condition << std::endl;
-          if(avg_err > twiddle_condition){
+          if(avg_err > twiddle_condition && twiddle_enable ==1 && dp_sum > 0.2){
               std::cout << " start twiddle ......" << std::endl;
 
               if(twiddle_flag1 == 0){
@@ -227,6 +232,7 @@ int main()
           }else{
               std::cout << "!!!!!! avg error is smaller than condition " << twiddle_condition << " !!!!!!!!" << std::endl;
               std::cout << "!!!!!! No need to twiddle any more  !!!!!!!!" << std::endl;
+              twiddle_enable = 0 ;
           }
 
 
