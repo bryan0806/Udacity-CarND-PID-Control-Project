@@ -24,7 +24,7 @@ double avg_err = 0;
 double best_err;
 double dp[] = {1.0,0.001,1.0};
 int twiddle_index = 0;
-double twiddle_condition = 0.04;
+double twiddle_condition = 0.03;
 int twiddle_flag1 = 0;
 int twddle_flag2 = 0;
 int first_flag = 0;
@@ -67,7 +67,8 @@ int main()
 
   PID pid_angle;
   // TODO: Initialize the pid_angle variable.
-  pid_angle.Init(3.0,0.1,3.0);
+  pid_angle.Init(1.14239,0.1011,7.06388);
+  twiddle_enable = 0 ;
 
 
   h.onMessage([&pid_angle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
@@ -110,7 +111,7 @@ int main()
 
 
 
-          if((num%2000==0) || ((std::fabs(cte) >= 2.4)&&((total_num-pre_num) > 100 ))){
+          if((num%5000==0) || ((std::fabs(cte) >= 2.4)&&((total_num-pre_num) > 100 ))){
               reset_times += 1;
               pre_num = total_num;
               avg_err = cte_2_sum/num;
