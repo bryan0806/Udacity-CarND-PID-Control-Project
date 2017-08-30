@@ -24,7 +24,7 @@ double avg_err = 0;
 double best_err;
 double dp[] = {1.0,0.001,1.0};
 int twiddle_index = 0;
-double twiddle_condition = 0.03;
+double twiddle_condition = 0.04;
 int twiddle_flag1 = 0;
 int twddle_flag2 = 0;
 int first_flag = 0;
@@ -131,8 +131,8 @@ int main()
               
 
           std::cout << " best error:" << best_err << std::endl;
-          std::cout << " twiddle condiftion:" << twiddle_condition << std::endl;
-          if(avg_err > twiddle_condition && twiddle_enable ==1 && dp_sum > 0.08){
+          std::cout << " twiddle condition:" << twiddle_condition << std::endl;
+          if(avg_err > twiddle_condition && twiddle_enable ==1 && dp_sum > 0.08){  // quit twiddle if average error is small enough or dp sum is too small
             next_dp:
             ;
               std::cout << " start twiddle ......" << std::endl;
