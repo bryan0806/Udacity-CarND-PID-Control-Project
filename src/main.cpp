@@ -67,7 +67,7 @@ int main()
 
   PID pid_angle;
   // TODO: Initialize the pid_angle variable.
-  pid_angle.Init(1.14239,0.1011,7.06388);
+  pid_angle.Init(1.14239,0.00001,7.06388);
   twiddle_enable = 0 ;
 
 
